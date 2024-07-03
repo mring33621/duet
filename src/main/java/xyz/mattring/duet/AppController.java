@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import xyz.mattring.usrmgt.UsrMgt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 @Controller
 public class AppController {
 
+    public static final String USERNAME = "username";
+    public static final String TOKEN = "token";
     private final UsrMgt usrMgt;
     private final ChatFile chatFile;
 
@@ -32,13 +32,16 @@ public class AppController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestParam("username") String username,
+    public String login(@RequestParam(USERNAME) String username,
                         @RequestParam("password") String password,
                         HttpServletRequest request,
                         HttpServletResponse response) {
 
         Optional<String> maybeToken = usrMgt.tryLogin(username + '|' + password);
         if (maybeToken.isPresent()) {
+            HttpSession session = request.getSession();
+            session.setAttribute(USERNAME, username);
+            session.setAttribute(TOKEN, maybeToken.get());
             return "redirect:/chat"; // Redirect to the /chat endpoint
         } else {
             HttpSession session = request.getSession();
@@ -50,18 +53,31 @@ public class AppController {
 
     @GetMapping("/chat")
     public String chat(Model model) {
-        List<String> chatMsgs = getChatMsgs();
+        List<String> chatMsgs = chatFile.getTodaysMessages();
         model.addAttribute("chatMsgs", chatMsgs);
         return "chat";
     }
 
-    private List<String> getChatMsgs() {
+    private List<String> getChatMsgs(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        String username = (String) session.getAttribute(USERNAME);
+        String token = (String) session.getAttribute(TOKEN);
         return chatFile.getTodaysMessages();
     }
 
     @PostMapping("/newMsg")
-    public String newMessage(@RequestParam("message") String message) {
-        chatFile.addMessage("Someone", message);
+    public String newMessage(@RequestParam("message") String message, HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        String username = (String) session.getAttribute(USERNAME);
+        String token = (String) session.getAttribute(TOKEN);
+        chatFile.addMessage(username, message);
         return "redirect:/chat"; // Redirect back to the chat page
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        session.invalidate();
+        return "login";
     }
 }
