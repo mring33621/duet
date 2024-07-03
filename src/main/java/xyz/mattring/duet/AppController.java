@@ -20,12 +20,10 @@ public class AppController {
 
     private final UsrMgt usrMgt;
     private final ChatFile chatFile;
-    private final List<String> msgs;
 
     public AppController() {
         usrMgt = new UsrMgt("Duet", null);
         chatFile = new ChatFile();
-        msgs = new ArrayList<>(Arrays.asList("Msg1\n", "Msg2\n", "Msg3\n"));
     }
 
     @GetMapping("/")
@@ -58,12 +56,12 @@ public class AppController {
     }
 
     private List<String> getChatMsgs() {
-        return msgs;
+        return chatFile.getTodaysMessages();
     }
 
     @PostMapping("/newMsg")
     public String newMessage(@RequestParam("message") String message) {
-        msgs.add(message);
+        chatFile.addMessage("Someone", message);
         return "redirect:/chat"; // Redirect back to the chat page
     }
 }
