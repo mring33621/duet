@@ -26,6 +26,10 @@ public class AppController {
         chatFile = new ChatFile();
     }
 
+    private List<String> getChatMsgs() {
+        return chatFile.getTodaysMessages().reversed(); // newest first
+    }
+
     @GetMapping("/")
     public String index() {
         return "login";
@@ -52,26 +56,31 @@ public class AppController {
     }
 
     @GetMapping("/chat")
-    public String chat(Model model) {
-        List<String> chatMsgs = chatFile.getTodaysMessages();
-        model.addAttribute("chatMsgs", chatMsgs);
-        return "chat";
-    }
-
-    private List<String> getChatMsgs(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        String username = (String) session.getAttribute(USERNAME);
-        String token = (String) session.getAttribute(TOKEN);
-        return chatFile.getTodaysMessages();
+    public String chat(Model model, HttpServletRequest request) {
+        final HttpSession session = request.getSession();
+        final String token = (String) session.getAttribute(TOKEN);
+        if (usrMgt.validateToken(token, true)) {
+            List<String> chatMsgs = getChatMsgs();
+            model.addAttribute("chatMsgs", chatMsgs);
+            return "chat";
+        } else {
+            session.invalidate();
+            return "login";
+        }
     }
 
     @PostMapping("/newMsg")
     public String newMessage(@RequestParam("message") String message, HttpServletRequest request) {
         HttpSession session = request.getSession();
-        String username = (String) session.getAttribute(USERNAME);
         String token = (String) session.getAttribute(TOKEN);
-        chatFile.addMessage(username, message);
-        return "redirect:/chat"; // Redirect back to the chat page
+        if (usrMgt.validateToken(token, true)) {
+            String username = (String) session.getAttribute(USERNAME);
+            chatFile.addMessage(username, message);
+            return "redirect:/chat"; // Redirect back to the chat page
+        } else {
+            session.invalidate();
+            return "login";
+        }
     }
 
     @GetMapping("/logout")

@@ -14,7 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ChatFile {
-    static final String PATH = "~/duet/ChatFile_%d.txt";
+    private static final String PATH = System.getProperty("user.home") + "/duet/ChatFile_%d.txt";
 
     static String todayYYYYMMDD() {
         return LocalDate.now().toString().replace("-", "");
@@ -78,7 +78,9 @@ public class ChatFile {
     final ScheduledExecutorService sched;
 
     public ChatFile() {
-        new File(PATH).mkdirs();
+        final File chatFileDir = new File(PATH).getParentFile();
+        chatFileDir.mkdirs();
+        System.out.println("chatFileDir: " + chatFileDir.getAbsolutePath());
         currentDay = todayAsInt();
         todaysMessages = loadTodaysMessages();
         exec = Executors.newSingleThreadExecutor();

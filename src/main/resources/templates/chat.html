@@ -44,13 +44,18 @@
     </style>
 </head>
 <body>
-<h2>Chat</h2>
-<div th:each="msg : ${chatMsgs}">
-    <div class="chat-message" th:text="${msg}">Message</div>
-</div>
-<form class="new-message-form" action="/newMsg" method="post">
+<p>
+    <a href="/apps/duet/logout">Logout</a>
+</p>
+<form class="new-message-form" action="/apps/duet/newMsg" method="post">
     <textarea name="message" cols="30" rows="5"></textarea>
     <button type="submit">Send</button>
 </form>
+<div th:each="msg : ${chatMsgs}">
+    <div class="chat-message" th:text="${msg}">Message</div>
+</div>
+<p>
+    <a href="/apps/duet/logout">Logout</a>
+</p>
 </body>
 </html>
