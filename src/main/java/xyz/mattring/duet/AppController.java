@@ -16,13 +16,14 @@ import java.util.Optional;
 @Controller
 public class AppController {
 
-    public static final String USERNAME = "username";
-    public static final String TOKEN = "token";
+    private static final String USERNAME = "username";
+    private static final String TOKEN = "token";
+    private static final long NINE_MINS_MILLIS = 1000 * 60 * 9;
     private final UsrMgt usrMgt;
     private final ChatFile chatFile;
 
     public AppController() {
-        usrMgt = new UsrMgt("Duet", null);
+        usrMgt = new UsrMgt("Duet", null, NINE_MINS_MILLIS);
         chatFile = new ChatFile();
     }
 

@@ -87,7 +87,7 @@ public class ChatFile {
         sched = Executors.newSingleThreadScheduledExecutor();
         // add scheduled task for every 10 minutes
         sched.scheduleWithFixedDelay(
-                this::checkFileDay, 10, 10, TimeUnit.MINUTES);
+                this::checkFileDay, 15, 15, TimeUnit.MINUTES);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             exec.shutdownNow();
             sched.shutdownNow();
@@ -97,9 +97,10 @@ public class ChatFile {
 
     void checkFileDay() {
         try {
-            if (isNewDay()) {
-                exec.submit(this::closeOldAndOpenNewChatFile);
-            }
+//            if (isNewDay()) {
+//                exec.submit(this::closeOldAndOpenNewChatFile);
+//            }
+            exec.submit(this::closeOldAndOpenNewChatFile);
         } catch (Exception e) {
             e.printStackTrace();
         }
