@@ -90,4 +90,9 @@ public class AppController {
         session.invalidate();
         return "login";
     }
+
+    @GetMapping("/refresh")
+    public String refresh() {
+        return "redirect:/chat"; // Redirect back to the chat page
+    }
 }

@@ -41,11 +41,25 @@
         .new-message-form textarea {
             margin-bottom: 10px;
         }
+
+        p {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        a.logout {
+            text-align: left;
+        }
+
+        a.refresh {
+            text-align: right;
+        }
     </style>
 </head>
 <body>
 <p>
-    <a href="/apps/duet/logout">Logout</a>
+    <a href="/apps/duet/logout" class="logout">Logout</a>
+    <a href="/apps/duet/refresh" class="refresh">Check for new messages</a>
 </p>
 <form class="new-message-form" action="/apps/duet/newMsg" method="post">
     <textarea name="message" cols="30" rows="5"></textarea>
@@ -55,7 +69,8 @@
     <div class="chat-message" th:text="${msg}">Message</div>
 </div>
 <p>
-    <a href="/apps/duet/logout">Logout</a>
+    <a href="/apps/duet/logout" class="logout">Logout</a>
+    <a href="/apps/duet/refresh" class="refresh">Check for new messages</a>
 </p>
 </body>
 </html>

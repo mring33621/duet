@@ -97,9 +97,6 @@ public class ChatFile {
 
     void checkFileDay() {
         try {
-//            if (isNewDay()) {
-//                exec.submit(this::closeOldAndOpenNewChatFile);
-//            }
             exec.submit(this::closeOldAndOpenNewChatFile);
         } catch (Exception e) {
             e.printStackTrace();
