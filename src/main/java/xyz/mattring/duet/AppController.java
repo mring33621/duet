@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import xyz.mattring.usrmgt.UsrMgt;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Controller
 public class AppController {
@@ -21,10 +20,12 @@ public class AppController {
     private static final long NINE_MINS_MILLIS = 1000 * 60 * 9;
     private final UsrMgt usrMgt;
     private final ChatFile chatFile;
+    private final Map<String, String> usersToLoginTimestampsMap;
 
     public AppController() {
         usrMgt = new UsrMgt("Duet", null, NINE_MINS_MILLIS);
         chatFile = new ChatFile();
+        usersToLoginTimestampsMap = new HashMap<>();
     }
 
     private List<String> getChatMsgs() {
@@ -47,6 +48,7 @@ public class AppController {
             HttpSession session = request.getSession();
             session.setAttribute(USERNAME, username);
             session.setAttribute(TOKEN, maybeToken.get());
+            usersToLoginTimestampsMap.put(username, ChatFile.now());
             return "redirect:/chat"; // Redirect to the /chat endpoint
         } else {
             HttpSession session = request.getSession();
@@ -61,12 +63,28 @@ public class AppController {
         final HttpSession session = request.getSession();
         final String token = (String) session.getAttribute(TOKEN);
         if (usrMgt.validateToken(token, true)) {
-            List<String> chatMsgs = getChatMsgs();
-            model.addAttribute("chatMsgs", chatMsgs);
+            final List<String> chatMsgs = getChatMsgs();
+            final String currentUser = (String) session.getAttribute(USERNAME);
+            model.addAttribute("chatMsgs", addLastLoginInfoToMsgs(currentUser, chatMsgs));
             return "chat";
         } else {
             session.invalidate();
             return "login";
+        }
+    }
+
+    List<String> addLastLoginInfoToMsgs(final String currentUser, final List<String> chatMsgs) {
+        final List<String> lastLoginInfoMsgs = new LinkedList<>();
+        for (Map.Entry<String, String> userStampEntry : usersToLoginTimestampsMap.entrySet()) {
+            if (!currentUser.equals(userStampEntry.getKey())) {
+                lastLoginInfoMsgs.add(userStampEntry.getKey() + " last logged in at " + userStampEntry.getValue());
+            }
+        }
+        if (lastLoginInfoMsgs.isEmpty()) {
+            return chatMsgs;
+        } else {
+            lastLoginInfoMsgs.addAll(chatMsgs);
+            return lastLoginInfoMsgs;
         }
     }
 
