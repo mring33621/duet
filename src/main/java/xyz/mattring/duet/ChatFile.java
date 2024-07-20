@@ -4,17 +4,16 @@ import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class ChatFile {
     private static final String PATH = System.getProperty("user.home") + "/duet/ChatFile_%d.txt";
+    static final String MSG_TEMPLATE_WITH_HEADER = "%s at %s:\n%s\n";
 
     static String todayYYYYMMDD() {
         return LocalDate.now().toString().replace("-", "");
@@ -28,6 +27,27 @@ public class ChatFile {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
         return now.format(formatter);
+    }
+
+    static Optional<String> parseTimestampFromMessage(String message) {
+        String timestamp = null;
+        if (message != null && message.contains(":")) {
+            String frontPartWithTimestamp = message.substring(0, message.indexOf(":"));
+            if (frontPartWithTimestamp.contains(" at ")) {
+                timestamp = frontPartWithTimestamp.split(" at ")[1];
+            }
+        }
+        return Optional.ofNullable(timestamp);
+    }
+
+    static Long timestampToLong(String timestamp) {
+        return Long.parseLong(timestamp.replace("-", ""));
+    }
+
+    static TimestampedMsg msgStringToTimestampedMsg(String message) {
+        Optional<String> maybeTimestamp = parseTimestampFromMessage(message);
+        return maybeTimestamp.map(s -> new TimestampedMsg(message, timestampToLong(s)))
+                .orElseGet(() -> new TimestampedMsg(message, timestampToLong(now())));
     }
 
     static List<String> readMessagesFromFile(File file) {
@@ -57,10 +77,10 @@ public class ChatFile {
         return sections;
     }
 
-    static void writeMessagesToFile(List<String> sections, File targetFile) {
+    static void writeMessagesToFile(List<TimestampedMsg> sections, File targetFile) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(targetFile))) {
             for (int i = 0; i < sections.size(); i++) {
-                bw.write(sections.get(i));
+                bw.write(sections.get(i).msg());
                 bw.newLine();
                 if (i < sections.size() - 1) {
                     bw.write("_NEW_MESSAGE_");
@@ -73,7 +93,7 @@ public class ChatFile {
     }
 
     int currentDay;
-    List<String> todaysMessages;
+    List<TimestampedMsg> todaysMessages;
     final ExecutorService exec;
     final ScheduledExecutorService sched;
 
@@ -113,8 +133,10 @@ public class ChatFile {
         }
     }
 
-    private List<String> loadTodaysMessages() {
-        return new LinkedList<>(readMessagesFromFile(getMessagesFile()));
+    private List<TimestampedMsg> loadTodaysMessages() {
+        return readMessagesFromFile(
+                getMessagesFile()).stream().map(ChatFile::msgStringToTimestampedMsg)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     boolean isNewDay() {
@@ -125,16 +147,16 @@ public class ChatFile {
         return new File(PATH.formatted(currentDay));
     }
 
-    public List<String> getTodaysMessages() {
+    public List<TimestampedMsg> getTodaysMessages() {
         return new ArrayList<>(todaysMessages);
     }
 
     public void addMessage(final String user, final String message) {
         exec.submit(() -> {
             try {
-                String templateWithHeader = "%s at %s:\n%s\n";
-                String timestamp = now();
-                todaysMessages.add(templateWithHeader.formatted(user, timestamp, message));
+                String nowStamp = now();
+                String fullMsg = String.format(MSG_TEMPLATE_WITH_HEADER, user, nowStamp, message);
+                todaysMessages.add(new TimestampedMsg(fullMsg, timestampToLong(nowStamp)));
             } catch (Exception e) {
                 e.printStackTrace();
             }

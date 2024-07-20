@@ -28,8 +28,8 @@ public class AppController {
         usersToLoginTimestampsMap = new HashMap<>();
     }
 
-    private List<String> getChatMsgs() {
-        return chatFile.getTodaysMessages().reversed(); // newest first
+    private List<TimestampedMsg> getChatMsgs() {
+        return chatFile.getTodaysMessages();
     }
 
     @GetMapping("/")
@@ -63,9 +63,12 @@ public class AppController {
         final HttpSession session = request.getSession();
         final String token = (String) session.getAttribute(TOKEN);
         if (usrMgt.validateToken(token, true)) {
-            final List<String> chatMsgs = getChatMsgs();
+            List<TimestampedMsg> chatMsgs = getChatMsgs();
             final String currentUser = (String) session.getAttribute(USERNAME);
-            model.addAttribute("chatMsgs", addLastLoginInfoToMsgs(currentUser, chatMsgs));
+            chatMsgs = addLastLoginInfoToMsgs(currentUser, chatMsgs); // add last login info
+            chatMsgs.sort(Comparator.comparingLong(TimestampedMsg::timestamp).reversed()); // sort reverse for newest first
+            model.addAttribute("chatMsgs", chatMsgs);
+            model.addAttribute("bgColorPicker", new MsgBgColorPicker(currentUser));
             return "chat";
         } else {
             session.invalidate();
@@ -73,11 +76,13 @@ public class AppController {
         }
     }
 
-    List<String> addLastLoginInfoToMsgs(final String currentUser, final List<String> chatMsgs) {
-        final List<String> lastLoginInfoMsgs = new LinkedList<>();
+    List<TimestampedMsg> addLastLoginInfoToMsgs(final String currentUser, final List<TimestampedMsg> chatMsgs) {
+        final List<TimestampedMsg> lastLoginInfoMsgs = new LinkedList<>();
         for (Map.Entry<String, String> userStampEntry : usersToLoginTimestampsMap.entrySet()) {
             if (!currentUser.equals(userStampEntry.getKey())) {
-                lastLoginInfoMsgs.add(userStampEntry.getKey() + " last logged in at " + userStampEntry.getValue());
+                final String timestamp = userStampEntry.getValue();
+                final String msg = userStampEntry.getKey() + " last logged in at " + userStampEntry.getValue();
+                lastLoginInfoMsgs.add(new TimestampedMsg(msg, ChatFile.timestampToLong(timestamp)));
             }
         }
         if (lastLoginInfoMsgs.isEmpty()) {

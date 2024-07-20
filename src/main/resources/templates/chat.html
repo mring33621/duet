@@ -66,7 +66,7 @@
     <button type="submit">Send</button>
 </form>
 <div th:each="msg : ${chatMsgs}">
-    <div class="chat-message" th:text="${msg}">Message</div>
+    <div class="chat-message" th:text="${msg.msg()}" th:style="'background-color: ' + ${bgColorPicker.pickColor(msg.msg())}">Message</div>
 </div>
 <p>
     <a href="/apps/duet/logout" class="logout">Logout</a>
